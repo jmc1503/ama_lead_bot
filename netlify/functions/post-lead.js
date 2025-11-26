@@ -346,8 +346,10 @@ exports.handler = async (event, context) => {
   }
 
   // Build embed fields
+  // Build embed fields
   const fields = [];
 
+  // Row 1: RRP / Resell / Est. Profit (inline)
   if (usePricing && rrpValue !== null && resellValue !== null) {
     const rrpStr = `£${rrpValue.toFixed(2)}`;
     const resellStr = `£${resellValue.toFixed(2)}`;
@@ -360,22 +362,37 @@ exports.handler = async (event, context) => {
     );
   }
 
+  // Row 2: Drop Date + Risk rating (inline on same line)
   if (useDropDate && dropLabel) {
-    fields.push({ name: 'Drop', value: dropLabel, inline: true });
+    fields.push({ name: 'Drop Date', value: dropLabel, inline: true });
+
+    if (useRiskRating && riskText) {
+      fields.push({ name: 'Risk rating', value: riskText, inline: true });
+    }
+  } else if (useRiskRating && riskText) {
+    // If drop date is not included but risk is, show risk on its own line
+    fields.push({ name: 'Risk rating', value: riskText, inline: false });
   }
 
+  // Row 3: Lead location (full width)
   if (useLeadLocation && leadLocationText) {
-    fields.push({ name: 'Lead location', value: leadLocationText, inline: true });
+    fields.push({
+      name: 'Lead location',
+      value: leadLocationText,
+      inline: false,
+    });
   }
 
+  // Row 4: Resell platforms (full width)
   if (usePlatforms && platformsText) {
-    fields.push({ name: 'Resell platforms', value: platformsText, inline: true });
+    fields.push({
+      name: 'Resell platforms',
+      value: platformsText,
+      inline: false,
+    });
   }
 
-  if (useRiskRating && riskText) {
-    fields.push({ name: 'Risk rating', value: riskText, inline: true });
-  }
-
+  // Row 5: Sold listings (full width)
   if (useSoldListings && soldUrlText) {
     fields.push({
       name: 'Sold listings',
@@ -384,6 +401,7 @@ exports.handler = async (event, context) => {
     });
   }
 
+  // Returns (full width)
   if (useReturns && returnsText) {
     fields.push({
       name: 'Returns',
@@ -392,6 +410,7 @@ exports.handler = async (event, context) => {
     });
   }
 
+  // Misc (full width)
   if (useMisc && miscText) {
     fields.push({
       name: 'Misc',
@@ -407,7 +426,7 @@ exports.handler = async (event, context) => {
   }
 
   const embed = {
-    title: `[${config.label}] ${titleText}`,
+    title: titleText,
     description: descriptionBlock || undefined,
     color: config.colour,
     fields,

@@ -156,194 +156,248 @@ exports.handler = async (event, context) => {
   const isLiveNow = !!liveNow;
 
   // Validation & data building
-  let rrpValue = null;
-  let resellValue = null;
-  let profitValue = null;
 
-  if (usePricing) {
-    rrpValue = parseMoney(rrp);
-    resellValue = parseMoney(resellPrice);
-    if (rrpValue === null || resellValue === null) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'RRP and Resell must be valid numbers when pricing is included' }),
-      };
-    }
-    profitValue = resellValue - rrpValue;
+// ----- Pricing -----
+let rrpValue = null;
+let resellValue = null;
+let profitValue = null;
+
+if (usePricing) {
+  if (!rrp || !rrp.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'RRP is required when pricing is included' }),
+    };
   }
 
-  let dropLabel = null;
-  if (useDropDate) {
-    if (isLiveNow) {
-      dropLabel = 'Live now';
-    } else {
-      const d = (dropDate || '').trim();
-      if (!d) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'Drop date is required or tick Live now' }),
-        };
-      }
-      if (d.length > 80) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'Drop date must be at most 80 characters' }),
-        };
-      }
-      dropLabel = d;
-    }
+  if (!resellPrice || !resellPrice.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Resell price is required when pricing is included' }),
+    };
   }
 
-  let leadLocationText = null;
-  if (useLeadLocation) {
-    const loc = (leadLocation || '').trim();
-    if (!loc) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Lead location cannot be empty when included' }),
-      };
-    }
-    if (loc.length > 160) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Lead location must be at most 160 characters' }),
-      };
-    }
-    leadLocationText = loc;
+  rrpValue = parseMoney(rrp);
+  resellValue = parseMoney(resellPrice);
+
+  if (rrpValue === null) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'RRP must be a valid number' }),
+    };
+  }
+  if (resellValue === null) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Resell price must be a valid number' }),
+    };
   }
 
-  let platformsText = null;
-  if (usePlatforms) {
-    const platforms = [];
-    if (platform_ebay) platforms.push('eBay');
-    if (platform_facebook) platforms.push('Facebook Marketplace');
-    if (platform_stockx) platforms.push('StockX');
-    if (platform_goat) platforms.push('GOAT');
+  profitValue = resellValue - rrpValue;
+}
 
-    if (platforms.length === 0) {
+
+// ----- Drop date -----
+let dropLabel = null;
+if (useDropDate) {
+  if (isLiveNow) {
+    dropLabel = 'Live now';
+  } else {
+    if (!dropDate || !dropDate.trim()) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Select at least one resell platform or untick the section' }),
+        body: JSON.stringify({ error: 'Drop date cannot be empty when included (or tick Live Now)' }),
       };
     }
 
-    platformsText = platforms.join(', ');
+    if (dropDate.length > 80) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Drop date must be at most 80 characters' }),
+      };
+    }
+
+    dropLabel = dropDate.trim();
+  }
+}
+
+
+// ----- Lead location -----
+let leadLocationText = null;
+if (useLeadLocation) {
+  if (!leadLocation || !leadLocation.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Lead location cannot be empty when included' }),
+    };
   }
 
-  let soldUrlText = null;
-  if (useSoldListings) {
-    const u = (soldListingsUrl || '').trim();
-    if (!u) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Sold listings URL cannot be empty when included' }),
-      };
-    }
-    if (!/^https?:\/\//i.test(u)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Sold listings URL must start with http or https' }),
-      };
-    }
-    if (u.length > 300) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Sold listings URL is too long' }),
-      };
-    }
-    soldUrlText = u;
+  if (leadLocation.length > 160) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Lead location must be at most 160 characters' }),
+    };
   }
 
-  let descriptionText = null;
-  if (useDescription) {
-    const d = (description || '').trim();
-    if (!d) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Description cannot be empty when included' }),
-      };
-    }
-    if (d.length > 1500) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Description must be at most 1500 characters' }),
-      };
-    }
-    descriptionText = d;
+  leadLocationText = leadLocation.trim();
+}
+
+
+// ----- Platforms -----
+let platformsText = null;
+if (usePlatforms) {
+  const platforms = [];
+  if (platform_ebay) platforms.push('eBay');
+  if (platform_facebook) platforms.push('Facebook Marketplace');
+  if (platform_stockx) platforms.push('StockX');
+  if (platform_goat) platforms.push('GOAT');
+
+  if (platforms.length === 0) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Select at least one resell platform or untick the section' }),
+    };
   }
 
-  let riskText = null;
-  if (useRiskRating) {
-    const r = (riskRating || '').trim();
-    if (!r) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Risk rating is required when included' }),
-      };
-    }
-    const n = Number(r);
-    if (!Number.isInteger(n) || n < 1 || n > 5) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Risk rating must be an integer between 1 and 5' }),
-      };
-    }
-    riskText = `${n} / 5`;
+  platformsText = platforms.join(', ');
+}
+
+
+// ----- Sold listings -----
+let soldUrlText = null;
+if (useSoldListings) {
+  if (!soldListingsUrl || !soldListingsUrl.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Sold listings URL cannot be empty when included' }),
+    };
   }
 
-  let returnsText = null;
-  if (useReturns) {
-    const t = (returnsInfo || '').trim();
-    if (!t) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Returns info cannot be empty when included' }),
-      };
-    }
-    if (t.length > 500) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Returns info must be at most 500 characters' }),
-      };
-    }
-    returnsText = t;
+  const u = soldListingsUrl.trim();
+
+  if (!/^https?:\/\//i.test(u)) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Sold listings URL must start with http or https' }),
+    };
   }
 
-  let miscText = null;
-  if (useMisc) {
-    const t = (miscInfo || '').trim();
-    if (!t) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Misc info cannot be empty when included' }),
-      };
-    }
-    if (t.length > 500) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Misc info must be at most 500 characters' }),
-      };
-    }
-    miscText = t;
+  if (u.length > 300) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Sold listings URL is too long' }),
+    };
   }
 
-  let imageUrlText = null;
-  if (imageUrl && imageUrl.trim()) {
-    const i = imageUrl.trim();
-    if (!/^https?:\/\//i.test(i)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Image URL must start with http or https' }),
-      };
-    }
-    if (i.length > 400) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Image URL is too long' }),
-      };
-    }
-    imageUrlText = i;
+  soldUrlText = u;
+}
+
+
+// ----- Description -----
+let descriptionText = null;
+if (useDescription) {
+  if (!description || !description.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Description cannot be empty when included' }),
+    };
   }
+
+  if (description.length > 1500) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Description must be at most 1500 characters' }),
+    };
+  }
+
+  descriptionText = description.trim();
+}
+
+
+// ----- Risk -----
+let riskText = null;
+if (useRiskRating) {
+  if (!riskRating || !riskRating.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Risk rating cannot be empty when included' }),
+    };
+  }
+
+  const n = Number(riskRating);
+  if (!Number.isInteger(n) || n < 1 || n > 5) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Risk rating must be an integer 1–5' }),
+    };
+  }
+
+  riskText = `${n} / 5`;
+}
+
+
+// ----- Returns -----
+let returnsText = null;
+if (useReturns) {
+  if (!returnsInfo || !returnsInfo.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Returns info cannot be empty when included' }),
+    };
+  }
+
+  if (returnsInfo.length > 500) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Returns info must be at most 500 characters' }),
+    };
+  }
+
+  returnsText = returnsInfo.trim();
+}
+
+
+// ----- Misc -----
+let miscText = null;
+if (useMisc) {
+  if (!miscInfo || !miscInfo.trim()) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Misc info cannot be empty when included' }),
+    };
+  }
+
+  if (miscInfo.length > 500) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Misc info must be at most 500 characters' }),
+    };
+  }
+
+  miscText = miscInfo.trim();
+}
+
+
+// ----- Image -----
+let imageUrlText = null;
+if (imageUrl && imageUrl.trim()) {
+  const i = imageUrl.trim();
+  if (!/^https?:\/\//i.test(i)) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Image URL must start with http or https' }),
+    };
+  }
+
+  if (i.length > 400) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Image URL is too long' }),
+    };
+  }
+
+  imageUrlText = i;
+}
 
   // Build embed fields
   // Build embed fields
@@ -428,7 +482,7 @@ exports.handler = async (event, context) => {
   const embed = {
     title: titleText,
     description: descriptionBlock || undefined,
-    color: config.colour,
+    color: 0x6FD262,
     fields,
     footer: {
       text: `Posted via AMA Lead Console • Lead Type: ${config.label}`,

@@ -35,12 +35,6 @@
       font-size: 1.6rem;
     }
 
-    p.subtitle {
-      margin: 0.15rem 0 0;
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
-
     form {
       display: grid;
       gap: 1rem;
@@ -224,7 +218,6 @@
     <img src="images/logo.png" alt="AMA logo" />
     <div>
       <h1>AMA Lead Console</h1>
-      <p class="subtitle">Standardise lead posts across Sneakers, Collectibles, Electronics and more.</p>
     </div>
   </header>
 
@@ -241,7 +234,7 @@
           <option value="high_risk">High-Risk Flip</option>
           <option value="general">General</option>
         </select>
-        <span class="field-hint">Controls channel, embed colour, and role ping.</span>
+        <span class="field-hint">Controls channel and role ping.</span>
       </label>
 
       <label>
@@ -263,32 +256,36 @@
     <!-- Pricing -->
     <div class="optional-group">
       <div class="optional-header">
-        <span class="optional-header-main">RRP / Resell & profit</span>
+        <span class="optional-header-main">Pricing</span>
         <label class="optional-toggle">
           <input type="checkbox" name="includePricing" checked />
           Include
         </label>
       </div>
-      <div class="optional-body field-row">
-        <label>
-          RRP (£)
-          <input
-            type="text"
-            name="rrp"
-            inputmode="decimal"
-            placeholder="e.g. 165"
-          />
-        </label>
-        <label>
-          Resell (£)
-          <input
-            type="text"
-            name="resellPrice"
-            inputmode="decimal"
-            placeholder="e.g. 220"
-          />
-        </label>
-        <span class="field-hint">If included, both RRP and resell are required – profit is auto-calculated.</span>
+
+      <div class="optional-body">
+        <div class="field-row">
+          <label>
+            RRP (£)
+            <input
+              type="text"
+              name="rrp"
+              inputmode="decimal"
+              placeholder="e.g. 100"
+            />
+          </label>
+
+          <label>
+            Resell (£)
+            <input
+              type="text"
+              name="resellPrice"
+              inputmode="decimal"
+              placeholder="e.g. 150"
+            />
+          </label>
+        </div>
+        <span class="field-hint">If included, both RRP and Resell are required – profit is auto-calculated.</span>
       </div>
     </div>
 
@@ -301,21 +298,24 @@
           Include
         </label>
       </div>
+
       <div class="optional-body field-row">
-        <label>
-          Drop date / time
+        <label style="flex: 1 1 200px;">
+          Date / time
           <input
-            type="text"
+            type="datetime-local"
             name="dropDate"
-            maxlength="80"
-            placeholder="e.g. 28 Nov, 8am UK"
+            step="900"
           />
+          <span class="field-hint">
+            Uses your local time. Leave empty and tick “Live now” if it’s already live.
+          </span>
         </label>
-        <label class="optional-toggle">
+
+        <label class="optional-toggle" style="align-self: flex-end;">
           <input type="checkbox" name="liveNow" />
           Live now
         </label>
-        <span class="field-hint">Tick "Live now" if it’s already available instead of a future date.</span>
       </div>
     </div>
 
@@ -377,22 +377,65 @@
     <!-- Sold listings -->
     <div class="optional-group">
       <div class="optional-header">
-        <span class="optional-header-main">Sold listings URL</span>
+        <span class="optional-header-main">Sold listings</span>
         <label class="optional-toggle">
-          <input type="checkbox" name="includeSoldListings" />
+          <input type="checkbox" name="includeSoldListings" id="includeSoldListings" checked />
           Include
         </label>
       </div>
-      <div class="optional-body">
-        <label>
-          Sold listings URL
-          <input
-            type="text"
-            name="soldListingsUrl"
-            maxlength="300"
-            placeholder="e.g. https://www.ebay.co.uk/sch/i.html?...&LH_Sold=1"
-          />
-        </label>
+
+      <div class="optional-body" id="soldListingsSection">
+        <span class="field-hint">
+          Sold URLs appear only for the platforms you selected above.
+        </span>
+
+        <div id="sold-ebay" class="sold-url-field" style="display:none;">
+          <label>
+            eBay sold URL
+            <input
+              type="text"
+              name="soldUrl_ebay"
+              maxlength="300"
+              placeholder="eBay sold results URL"
+            />
+          </label>
+        </div>
+
+        <div id="sold-facebook" class="sold-url-field" style="display:none;">
+          <label>
+            Facebook sold URL
+            <input
+              type="text"
+              name="soldUrl_facebook"
+              maxlength="300"
+              placeholder="Facebook Marketplace sold link"
+            />
+          </label>
+        </div>
+
+        <div id="sold-stockx" class="sold-url-field" style="display:none;">
+          <label>
+            StockX sold URL
+            <input
+              type="text"
+              name="soldUrl_stockx"
+              maxlength="300"
+              placeholder="StockX sales history link"
+            />
+          </label>
+        </div>
+
+        <div id="sold-goat" class="sold-url-field" style="display:none;">
+          <label>
+            GOAT sold URL
+            <input
+              type="text"
+              name="soldUrl_goat"
+              maxlength="300"
+              placeholder="GOAT sales history link"
+            />
+          </label>
+        </div>
       </div>
     </div>
 
@@ -407,7 +450,7 @@
       </div>
       <div class="optional-body">
         <label>
-          Description
+          Details
           <textarea
             name="description"
             maxlength="1500"
@@ -420,7 +463,7 @@
     <!-- Risk rating -->
     <div class="optional-group">
       <div class="optional-header">
-        <span class="optional-header-main">Risk rating</span>
+        <span class="optional-header-main">Risk rating (1–5)</span>
         <label class="optional-toggle">
           <input type="checkbox" name="includeRiskRating" checked />
           Include
@@ -428,7 +471,7 @@
       </div>
       <div class="optional-body">
         <label>
-          Risk (1–5)
+          Value (1–5)
           <select name="riskRating" class="risk-select">
             <option value="">Select…</option>
             <option value="1">1 – Very low</option>
@@ -447,13 +490,13 @@
       <div class="optional-header">
         <span class="optional-header-main">Returns info</span>
         <label class="optional-toggle">
-          <input type="checkbox" name="includeReturns" />
+          <input type="checkbox" name="includeReturns" checked />
           Include
         </label>
       </div>
       <div class="optional-body">
         <label>
-          Returns info
+          Details
           <textarea
             name="returnsInfo"
             maxlength="500"
@@ -468,13 +511,13 @@
       <div class="optional-header">
         <span class="optional-header-main">Misc (discount codes, cashback, notes)</span>
         <label class="optional-toggle">
-          <input type="checkbox" name="includeMisc" />
+          <input type="checkbox" name="includeMisc" checked />
           Include
         </label>
       </div>
       <div class="optional-body">
         <label>
-          Misc
+          Notes
           <textarea
             name="miscInfo"
             maxlength="500"
@@ -492,7 +535,7 @@
       </div>
       <div class="optional-body">
         <label>
-          Image URL
+          URL
           <input
             type="text"
             name="imageUrl"
@@ -566,6 +609,51 @@
         submitButton.disabled = false;
       }
     });
+
+    // --- dynamic sold listing visibility ---
+    const includePlatforms = document.querySelector('input[name="includePlatforms"]');
+    const includeSoldListings = document.querySelector('#includeSoldListings');
+
+    const platformCheckboxes = {
+      ebay: document.querySelector('input[name="platform_ebay"]'),
+      facebook: document.querySelector('input[name="platform_facebook"]'),
+      stockx: document.querySelector('input[name="platform_stockx"]'),
+      goat: document.querySelector('input[name="platform_goat"]'),
+    };
+
+    const soldFields = {
+      ebay: document.getElementById('sold-ebay'),
+      facebook: document.getElementById('sold-facebook'),
+      stockx: document.getElementById('sold-stockx'),
+      goat: document.getElementById('sold-goat'),
+    };
+
+    function updateSoldFieldVisibility() {
+      const platformsOn = includePlatforms.checked;
+      const soldIncluded = includeSoldListings.checked;
+
+      // If sold listings OR platforms are disabled → hide entirely
+      if (!platformsOn || !soldIncluded) {
+        Object.values(soldFields).forEach(div => div.style.display = 'none');
+        return;
+      }
+
+      // Show only the sold URL inputs for platforms that are ticked
+      for (const key of Object.keys(platformCheckboxes)) {
+        if (platformCheckboxes[key].checked) {
+          soldFields[key].style.display = 'block';
+        } else {
+          soldFields[key].style.display = 'none';
+        }
+      }
+    }
+
+    includePlatforms.addEventListener('change', updateSoldFieldVisibility);
+    includeSoldListings.addEventListener('change', updateSoldFieldVisibility);
+    for (const key of Object.keys(platformCheckboxes)) {
+      platformCheckboxes[key].addEventListener('change', updateSoldFieldVisibility);
+    }
+    updateSoldFieldVisibility();
   </script>
 </body>
 </html>

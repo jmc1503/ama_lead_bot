@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lead Posting Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 640px;
+      margin: 2rem auto;
+      padding: 0 1rem 3rem;
+      line-height: 1.5;
+    }
+
+    h1 {
+      margin-bottom: 0.25rem;
+      font-size: 1.6rem;
+    }
+
+    p.subtitle {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    form {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+      padding: 0.45rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: rgba(15, 23, 42, 0.02);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #1d9bf0;
+      box-shadow: 0 0 0 1px rgba(29, 155, 240, 0.5);
+      background: rgba(15, 23, 42, 0.01);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      white-space: pre-wrap;
+    }
+
+    .field-hint {
+      font-size: 0.8rem;
+      font-weight: 400;
+      opacity: 0.7;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .field-row > label {
+      flex: 1 1 150px;
+    }
+
+    button[type="submit"] {
+      margin-top: 0.5rem;
+      cursor: pointer;
+      background: #1d9bf0;
+      color: white;
+      border: none;
+      font-weight: 600;
+      padding: 0.6rem 0.8rem;
+      border-radius: 999px;
+      justify-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    button[type="submit"]:hover:not(:disabled) {
+      filter: brightness(1.05);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .status {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      min-height: 1em;
+    }
+
+    .status.error {
+      color: #dc2626;
+    }
+
+    .status.success {
+      color: #16a34a;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        margin-top: 1.25rem;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Post a Lead</h1>
+  <p class="subtitle">Fill in the form to send a formatted lead to Discord. Lead type decides which channel it hits.</p>
+
+  <form id="leadForm" autocomplete="off">
+    <label>
+      Lead type
+      <select name="leadType" required>
+        <option value="">Select type…</option>
+        <option value="sneakers">Sneakers</option>
+        <option value="collectibles">Collectibles</option>
+        <option value="electronics">Electronics</option>
+        <option value="high_risk">High-Risk Flip</option>
+        <option value="general">General</option>
+      </select>
+      <span class="field-hint">Controls channel, embed colour, and role ping.</span>
+    </label>
+
+    <label>
+      Product name
+      <input
+        type="text"
+        name="productName"
+        required
+        minlength="3"
+        maxlength="100"
+        placeholder='e.g. Nike Kobe 6 Protro "Total Orange"'
+      />
+    </label>
+
+    <div class="field-row">
+      <label>
+        Retail price (£)
+        <input
+          type="text"
+          name="retailPrice"
+          required
+          inputmode="decimal"
+          placeholder="e.g. 165"
+        />
+        <span class="field-hint">Number only – no commas needed.</span>
+      </label>
+
+      <label>
+        Expected resale (£)
+        <input
+          type="text"
+          name="expectedResale"
+          required
+          inputmode="decimal"
+          placeholder="e.g. 220"
+        />
+        <span class="field-hint">Bot will calculate profit.</span>
+      </label>
+    </div>
+
+    <label>
+      Store / Site
+      <input
+        type="text"
+        name="storeName"
+        required
+        minlength="2"
+        maxlength="80"
+        placeholder="e.g. Nike SNKRS UK"
+      />
+    </label>
+
+    <label>
+      Details (SKU, sizes, risk, notes)
+      <textarea
+        name="details"
+        required
+        maxlength="1000"
+        placeholder="SKU:
+Sizes:
+Risk: Low / Medium / High
+Notes: (fees, stock, region, warnings)"
+      ></textarea>
+      <span class="field-hint">Keep it structured so members can scan it quickly.</span>
+    </label>
+
+    <label>
+      Staff password
+      <input
+        type="password"
+        name="authKey"
+        required
+        placeholder="Shared console password"
+      />
+      <span class="field-hint">Prevents randoms from posting if they find the URL.</span>
+    </label>
+
+    <button type="submit">
+      <span>Post lead</span>
+      <span aria-hidden="true">↗︎</span>
+    </button>
+
+    <div id="status" class="status"></div>
+  </form>
+
+  <script>
+    const form = document.getElementById('leadForm');
+    const statusEl = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+
+      const submitButton = form.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+
+      try {
+        const res = await fetch('/.netlify/functions/post-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {
+          // ignore JSON parse error – will fall back to generic messages
+        }
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || 'Failed to post lead.';
+          statusEl.classList.add('error');
+        } else {
+          statusEl.textContent = data.message || 'Lead posted successfully.';
+          statusEl.classList.add('success');
+          form.reset();
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Network error posting lead.';
+        statusEl.classList.add('error');
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

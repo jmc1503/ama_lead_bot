@@ -1,12 +1,12 @@
 // netlify/functions/post-lead.js
 
-// CONFIG: lead types → webhook & role
+// Lead type → Discord config
 const LEAD_TYPE_CONFIG = {
   sneakers: {
     label: 'Sneakers',
     colour: 0x1d9bf0,
     webhookUrl: process.env.WEBHOOK_SNEAKERS,
-    roleId: process.env.ROLE_SNEAKERS, // optional
+    roleId: process.env.ROLE_SNEAKERS,
   },
   collectibles: {
     label: 'Collectibles',
@@ -34,7 +34,6 @@ const LEAD_TYPE_CONFIG = {
   },
 };
 
-// Helpers
 function parseMoney(str) {
   if (!str) return null;
   const cleaned = String(str).replace(/[£$, ]/g, '');
@@ -63,15 +62,55 @@ exports.handler = async (event, context) => {
 
   const {
     leadType,
-    productName,
-    retailPrice,
-    expectedResale,
-    storeName,
-    details,
+    title,
     authKey,
+
+    // pricing
+    includePricing,
+    rrp,
+    resellPrice,
+
+    // drop date
+    includeDropDate,
+    dropDate,
+    liveNow,
+
+    // lead location
+    includeLeadLocation,
+    leadLocation,
+
+    // platforms
+    includePlatforms,
+    platform_ebay,
+    platform_facebook,
+    platform_stockx,
+    platform_goat,
+
+    // sold listings
+    includeSoldListings,
+    soldListingsUrl,
+
+    // description
+    includeDescription,
+    description,
+
+    // risk
+    includeRiskRating,
+    riskRating,
+
+    // returns
+    includeReturns,
+    returnsInfo,
+
+    // misc
+    includeMisc,
+    miscInfo,
+
+    // image
+    imageUrl,
   } = body;
 
-  // AUTH KEY CHECK
+  // Auth
   if (!authKey || authKey !== process.env.LEAD_CONSOLE_PASSWORD) {
     return {
       statusCode: 401,
@@ -79,7 +118,7 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // LEAD TYPE CHECK
+  // Lead type
   if (!leadType || !LEAD_TYPE_CONFIG[leadType]) {
     return {
       statusCode: 400,
@@ -88,86 +127,302 @@ exports.handler = async (event, context) => {
   }
 
   const config = LEAD_TYPE_CONFIG[leadType];
-
   if (!config.webhookUrl) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Webhook not configured for this lead type' }),
+      body: JSON.stringify({ error: 'No webhook configured for this lead type' }),
     };
   }
 
-  // VALIDATION: product name
-  const name = (productName || '').trim();
-  if (name.length < 3 || name.length > 100) {
+  // Title (required)
+  const titleText = (title || '').trim();
+  if (titleText.length < 3 || titleText.length > 150) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Product name must be 3–100 characters' }),
+      body: JSON.stringify({ error: 'Title must be 3–150 characters' }),
     };
   }
 
-  // Retail
-  const retail = parseMoney(retailPrice);
-  if (retail === null) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Retail price must be a valid number' }),
-    };
+  // Flags (checkboxes: present = "on")
+  const usePricing = !!includePricing;
+  const useDropDate = !!includeDropDate;
+  const useLeadLocation = !!includeLeadLocation;
+  const usePlatforms = !!includePlatforms;
+  const useSoldListings = !!includeSoldListings;
+  const useDescription = !!includeDescription;
+  const useRiskRating = !!includeRiskRating;
+  const useReturns = !!includeReturns;
+  const useMisc = !!includeMisc;
+  const isLiveNow = !!liveNow;
+
+  // Validation & data building
+  let rrpValue = null;
+  let resellValue = null;
+  let profitValue = null;
+
+  if (usePricing) {
+    rrpValue = parseMoney(rrp);
+    resellValue = parseMoney(resellPrice);
+    if (rrpValue === null || resellValue === null) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'RRP and Resell must be valid numbers when pricing is included' }),
+      };
+    }
+    profitValue = resellValue - rrpValue;
   }
 
-  // Resale
-  const resale = parseMoney(expectedResale);
-  if (resale === null) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Expected resale must be a valid number' }),
-    };
+  let dropLabel = null;
+  if (useDropDate) {
+    if (isLiveNow) {
+      dropLabel = 'Live now';
+    } else {
+      const d = (dropDate || '').trim();
+      if (!d) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Drop date is required or tick Live now' }),
+        };
+      }
+      if (d.length > 80) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Drop date must be at most 80 characters' }),
+        };
+      }
+      dropLabel = d;
+    }
   }
 
-  // Store
-  const store = (storeName || '').trim();
-  if (store.length < 2 || store.length > 80) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Store / Site must be 2–80 characters' }),
-    };
+  let leadLocationText = null;
+  if (useLeadLocation) {
+    const loc = (leadLocation || '').trim();
+    if (!loc) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Lead location cannot be empty when included' }),
+      };
+    }
+    if (loc.length > 160) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Lead location must be at most 160 characters' }),
+      };
+    }
+    leadLocationText = loc;
   }
 
-  // Details
-  const detailsText = (details || '').trim();
-  if (!detailsText || detailsText.length > 1000) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Details must be 1–1000 characters' }),
-    };
+  let platformsText = null;
+  if (usePlatforms) {
+    const platforms = [];
+    if (platform_ebay) platforms.push('eBay');
+    if (platform_facebook) platforms.push('Facebook Marketplace');
+    if (platform_stockx) platforms.push('StockX');
+    if (platform_goat) platforms.push('GOAT');
+
+    if (platforms.length === 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Select at least one resell platform or untick the section' }),
+      };
+    }
+
+    platformsText = platforms.join(', ');
   }
 
-  // Financial formatting
-  const retailStr = `£${retail.toFixed(2)}`;
-  const resaleStr = `£${resale.toFixed(2)}`;
-  const profitStr = `£${(resale - retail).toFixed(2)}`;
+  let soldUrlText = null;
+  if (useSoldListings) {
+    const u = (soldListingsUrl || '').trim();
+    if (!u) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Sold listings URL cannot be empty when included' }),
+      };
+    }
+    if (!/^https?:\/\//i.test(u)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Sold listings URL must start with http or https' }),
+      };
+    }
+    if (u.length > 300) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Sold listings URL is too long' }),
+      };
+    }
+    soldUrlText = u;
+  }
 
-  // BUILD EMBED
-  const title = `[${config.label}] ${name}`;
-  const description = `Store: ${store}\n\n${detailsText}`;
+  let descriptionText = null;
+  if (useDescription) {
+    const d = (description || '').trim();
+    if (!d) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Description cannot be empty when included' }),
+      };
+    }
+    if (d.length > 1500) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Description must be at most 1500 characters' }),
+      };
+    }
+    descriptionText = d;
+  }
+
+  let riskText = null;
+  if (useRiskRating) {
+    const r = (riskRating || '').trim();
+    if (!r) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Risk rating is required when included' }),
+      };
+    }
+    const n = Number(r);
+    if (!Number.isInteger(n) || n < 1 || n > 5) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Risk rating must be an integer between 1 and 5' }),
+      };
+    }
+    riskText = `${n} / 5`;
+  }
+
+  let returnsText = null;
+  if (useReturns) {
+    const t = (returnsInfo || '').trim();
+    if (!t) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Returns info cannot be empty when included' }),
+      };
+    }
+    if (t.length > 500) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Returns info must be at most 500 characters' }),
+      };
+    }
+    returnsText = t;
+  }
+
+  let miscText = null;
+  if (useMisc) {
+    const t = (miscInfo || '').trim();
+    if (!t) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Misc info cannot be empty when included' }),
+      };
+    }
+    if (t.length > 500) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Misc info must be at most 500 characters' }),
+      };
+    }
+    miscText = t;
+  }
+
+  let imageUrlText = null;
+  if (imageUrl && imageUrl.trim()) {
+    const i = imageUrl.trim();
+    if (!/^https?:\/\//i.test(i)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Image URL must start with http or https' }),
+      };
+    }
+    if (i.length > 400) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Image URL is too long' }),
+      };
+    }
+    imageUrlText = i;
+  }
+
+  // Build embed fields
+  const fields = [];
+
+  if (usePricing && rrpValue !== null && resellValue !== null) {
+    const rrpStr = `£${rrpValue.toFixed(2)}`;
+    const resellStr = `£${resellValue.toFixed(2)}`;
+    const profitStr = `£${profitValue.toFixed(2)}`;
+
+    fields.push(
+      { name: 'RRP', value: rrpStr, inline: true },
+      { name: 'Resell', value: resellStr, inline: true },
+      { name: 'Est. Profit (before fees)', value: profitStr, inline: true }
+    );
+  }
+
+  if (useDropDate && dropLabel) {
+    fields.push({ name: 'Drop', value: dropLabel, inline: true });
+  }
+
+  if (useLeadLocation && leadLocationText) {
+    fields.push({ name: 'Lead location', value: leadLocationText, inline: true });
+  }
+
+  if (usePlatforms && platformsText) {
+    fields.push({ name: 'Resell platforms', value: platformsText, inline: true });
+  }
+
+  if (useRiskRating && riskText) {
+    fields.push({ name: 'Risk rating', value: riskText, inline: true });
+  }
+
+  if (useSoldListings && soldUrlText) {
+    fields.push({
+      name: 'Sold listings',
+      value: `[View sold listings](${soldUrlText})`,
+      inline: false,
+    });
+  }
+
+  if (useReturns && returnsText) {
+    fields.push({
+      name: 'Returns',
+      value: returnsText,
+      inline: false,
+    });
+  }
+
+  if (useMisc && miscText) {
+    fields.push({
+      name: 'Misc',
+      value: miscText,
+      inline: false,
+    });
+  }
+
+  // Description block
+  let descriptionBlock = '';
+  if (descriptionText) {
+    descriptionBlock += descriptionText;
+  }
 
   const embed = {
-    title,
-    description,
+    title: `[${config.label}] ${titleText}`,
+    description: descriptionBlock || undefined,
     color: config.colour,
-    fields: [
-      { name: 'Retail', value: retailStr, inline: true },
-      { name: 'Expected Resale', value: resaleStr, inline: true },
-      { name: 'Est. Profit (before fees)', value: profitStr, inline: true },
-    ],
+    fields,
     footer: {
-      text: `Posted via Lead Console • Lead Type: ${config.label}`,
+      text: `Posted via AMA Lead Console • Lead Type: ${config.label}`,
     },
     timestamp: new Date().toISOString(),
   };
 
+  if (imageUrlText) {
+    embed.image = { url: imageUrlText };
+  }
+
   const content = config.roleId ? `<@&${config.roleId}>` : '';
 
-  // SEND TO DISCORD WEBHOOK
   try {
     const discordRes = await fetch(config.webhookUrl, {
       method: 'POST',

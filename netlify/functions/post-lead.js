@@ -8,29 +8,23 @@ const LEAD_TYPE_CONFIG = {
     webhookUrl: process.env.WEBHOOK_SNEAKERS,
     roleId: process.env.ROLE_SNEAKERS,
   },
-  collectibles: {
-    label: 'Collectibles',
+  flips: {
+    label: 'Flips',
     colour: 0xa855f7,
-    webhookUrl: process.env.WEBHOOK_COLLECTIBLES,
-    roleId: process.env.ROLE_COLLECTIBLES,
+    webhookUrl: process.env.WEBHOOK_FLIPS,
+    roleId: process.env.ROLE_FLIPS,
   },
-  electronics: {
-    label: 'Electronics',
+  pokemon: {
+    label: 'Pokemon',
     colour: 0x22c55e,
-    webhookUrl: process.env.WEBHOOK_ELECTRONICS,
+    webhookUrl: process.env.WEBHOOK_POKEMON,
     roleId: process.env.ROLE_ELECTRONICS,
   },
-  high_risk: {
-    label: 'High-Risk Flip',
+  lunchmoney: {
+    label: 'Lunch Money',
     colour: 0xef4444,
-    webhookUrl: process.env.WEBHOOK_HIGHRISK,
-    roleId: process.env.ROLE_HIGHRISK,
-  },
-  general: {
-    label: 'General',
-    colour: 0x64748b,
-    webhookUrl: process.env.WEBHOOK_GENERAL,
-    roleId: process.env.ROLE_GENERAL,
+    webhookUrl: process.env.WEBHOOK_LUNCHMONEY,
+    roleId: process.env.ROLE_LUNCHMONEY,
   },
 };
 

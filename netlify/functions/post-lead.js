@@ -79,6 +79,7 @@ exports.handler = async (event, context) => {
     platform_facebook,
     platform_stockx,
     platform_goat,
+    platform_vinted,
 
     // sold listings (per platform)
     includeSoldListings,
@@ -86,6 +87,7 @@ exports.handler = async (event, context) => {
     soldUrl_facebook,
     soldUrl_stockx,
     soldUrl_goat,
+    soldUrl_vinted,
 
     // description
     includeDescription,
@@ -249,6 +251,7 @@ exports.handler = async (event, context) => {
     if (platform_facebook) platforms.push('Facebook Marketplace');
     if (platform_stockx) platforms.push('StockX');
     if (platform_goat) platforms.push('GOAT');
+    if (platform_vinted) platforms.push('Vinted');
 
     if (platforms.length === 0) {
       return {
@@ -270,6 +273,7 @@ exports.handler = async (event, context) => {
       { label: 'Facebook', url: soldUrl_facebook },
       { label: 'StockX',   url: soldUrl_stockx },
       { label: 'GOAT',     url: soldUrl_goat },
+      { label: 'Vinted',     url: soldUrl_vinted },
     ];
 
     const lines = [];

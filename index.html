@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>AMA Lead Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
   <style>
     :root {
       color-scheme: light dark;
@@ -229,10 +230,9 @@
         <select name="leadType" required>
           <option value="">Select type…</option>
           <option value="sneakers">Sneakers</option>
-          <option value="collectibles">Collectibles</option>
-          <option value="electronics">Electronics</option>
-          <option value="high_risk">High-Risk Flip</option>
-          <option value="general">General</option>
+          <option value="flips">Flips</option>
+          <option value="pokemon">Pokemon</option>
+          <option value="lunch_money">Lunch Money</option>
         </select>
         <span class="field-hint">Controls channel and role ping.</span>
       </label>
@@ -289,35 +289,41 @@
       </div>
     </div>
 
-    <!-- Drop date -->
-    <div class="optional-group">
-      <div class="optional-header">
-        <span class="optional-header-main">Drop date</span>
-        <label class="optional-toggle">
-          <input type="checkbox" name="includeDropDate" checked />
-          Include
-        </label>
-      </div>
+<!-- Drop date -->
+<div class="optional-group">
+  <div class="optional-header">
+    <span class="optional-header-main">Drop date</span>
+    <label class="optional-toggle">
+      <input type="checkbox" name="includeDropDate" checked />
+      Include
+    </label>
+  </div>
 
-      <div class="optional-body field-row">
-        <label style="flex: 1 1 200px;">
-          Date / time
-          <input
-            type="datetime-local"
-            name="dropDate"
-            step="900"
-          />
-          <span class="field-hint">
-            Uses your local time. Leave empty and tick “Live now” if it’s already live.
-          </span>
-        </label>
+  <div class="optional-body">
+    <div class="field-row" style="align-items: flex-end; gap: 1.5rem;">
+      
+      <label style="flex: 1 0 150px;">
+        
+        <input
+          type="datetime-local"
+          name="dropDate"
+          step="900"
+          style="width: 85%;"
+        />
+      </label>
 
-        <label class="optional-toggle" style="align-self: flex-end;">
-          <input type="checkbox" name="liveNow" />
-          Live now
-        </label>
-      </div>
+      <label class="optional-toggle" style="flex: 0 0 auto; margin-bottom: 4px; margin-left: 0.5rem;">
+        <input type="checkbox" name="liveNow" />
+        Live now
+      </label>
+
     </div>
+
+    <span class="field-hint">
+      Uses your local time. Leave empty and tick “Live now” if it’s already live.
+    </span>
+  </div>
+</div>
 
     <!-- Lead location -->
     <div class="optional-group">
@@ -329,8 +335,6 @@
         </label>
       </div>
       <div class="optional-body">
-        <label>
-          URL or store name
           <input
             type="text"
             name="leadLocation"
@@ -449,8 +453,6 @@
         </label>
       </div>
       <div class="optional-body">
-        <label>
-          Details
           <textarea
             name="description"
             maxlength="1500"
@@ -470,8 +472,6 @@
         </label>
       </div>
       <div class="optional-body">
-        <label>
-          Value (1–5)
           <select name="riskRating" class="risk-select">
             <option value="">Select…</option>
             <option value="1">1 – Very low</option>
@@ -495,8 +495,6 @@
         </label>
       </div>
       <div class="optional-body">
-        <label>
-          Details
           <textarea
             name="returnsInfo"
             maxlength="500"
@@ -516,8 +514,7 @@
         </label>
       </div>
       <div class="optional-body">
-        <label>
-          Notes
+
           <textarea
             name="miscInfo"
             maxlength="500"
@@ -531,18 +528,21 @@
     <div class="optional-group">
       <div class="optional-header">
         <span class="optional-header-main">Image URL</span>
-        <span class="field-hint">Optional – if provided, will show as embed image.</span>
+        <label class="optional-toggle">
+          <input type="checkbox" name="includeImage" checked />
+          Include
+        </label>
       </div>
+
       <div class="optional-body">
-        <label>
-          URL
+     
           <input
             type="text"
             name="imageUrl"
             maxlength="400"
             placeholder="Direct image link (https://...)"
           />
-        </label>
+
       </div>
     </div>
 

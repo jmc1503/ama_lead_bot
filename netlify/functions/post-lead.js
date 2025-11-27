@@ -86,9 +86,12 @@ exports.handler = async (event, context) => {
     platform_stockx,
     platform_goat,
 
-    // sold listings
+    // sold listings (per platform)
     includeSoldListings,
-    soldListingsUrl,
+    soldUrl_ebay,
+    soldUrl_facebook,
+    soldUrl_stockx,
+    soldUrl_goat,
 
     // description
     includeDescription,
@@ -155,252 +158,276 @@ exports.handler = async (event, context) => {
   const useMisc = !!includeMisc;
   const isLiveNow = !!liveNow;
 
+  // ---------------------------
   // Validation & data building
+  // ---------------------------
 
-// ----- Pricing -----
-let rrpValue = null;
-let resellValue = null;
-let profitValue = null;
+  // ----- Pricing -----
+  let rrpValue = null;
+  let resellValue = null;
+  let profitValue = null;
 
-if (usePricing) {
-  if (!rrp || !rrp.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'RRP is required when pricing is included' }),
-    };
-  }
-
-  if (!resellPrice || !resellPrice.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Resell price is required when pricing is included' }),
-    };
-  }
-
-  rrpValue = parseMoney(rrp);
-  resellValue = parseMoney(resellPrice);
-
-  if (rrpValue === null) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'RRP must be a valid number' }),
-    };
-  }
-  if (resellValue === null) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Resell price must be a valid number' }),
-    };
-  }
-
-  profitValue = resellValue - rrpValue;
-}
-
-
-// ----- Drop date -----
-let dropLabel = null;
-if (useDropDate) {
-  if (isLiveNow) {
-    dropLabel = 'Live now';
-  } else {
-    if (!dropDate || !dropDate.trim()) {
+  if (usePricing) {
+    if (!rrp || !rrp.trim()) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Drop date cannot be empty when included (or tick Live Now)' }),
+        body: JSON.stringify({ error: 'RRP is required when pricing is included' }),
       };
     }
 
-    if (dropDate.length > 80) {
+    if (!resellPrice || !resellPrice.trim()) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Drop date must be at most 80 characters' }),
+        body: JSON.stringify({ error: 'Resell price is required when pricing is included' }),
       };
     }
 
-    dropLabel = dropDate.trim();
-  }
-}
+    rrpValue = parseMoney(rrp);
+    resellValue = parseMoney(resellPrice);
 
+    if (rrpValue === null) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'RRP must be a valid number' }),
+      };
+    }
+    if (resellValue === null) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Resell price must be a valid number' }),
+      };
+    }
 
-// ----- Lead location -----
-let leadLocationText = null;
-if (useLeadLocation) {
-  if (!leadLocation || !leadLocation.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Lead location cannot be empty when included' }),
-    };
-  }
-
-  if (leadLocation.length > 160) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Lead location must be at most 160 characters' }),
-    };
+    profitValue = resellValue - rrpValue;
   }
 
-  leadLocationText = leadLocation.trim();
-}
+  // ----- Drop date -----
+  let dropLabel = null;
+  if (useDropDate) {
+    if (isLiveNow) {
+      dropLabel = 'Live now';
+    } else {
+      if (!dropDate || !dropDate.trim()) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: 'Drop date cannot be empty when included (or tick Live Now)',
+          }),
+        };
+      }
 
+      if (dropDate.length > 80) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Drop date must be at most 80 characters' }),
+        };
+      }
 
-// ----- Platforms -----
-let platformsText = null;
-if (usePlatforms) {
-  const platforms = [];
-  if (platform_ebay) platforms.push('eBay');
-  if (platform_facebook) platforms.push('Facebook Marketplace');
-  if (platform_stockx) platforms.push('StockX');
-  if (platform_goat) platforms.push('GOAT');
-
-  if (platforms.length === 0) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Select at least one resell platform or untick the section' }),
-    };
+      dropLabel = dropDate.trim();
+    }
   }
 
-  platformsText = platforms.join(', ');
-}
+  // ----- Lead location -----
+  let leadLocationText = null;
+  if (useLeadLocation) {
+    if (!leadLocation || !leadLocation.trim()) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Lead location cannot be empty when included' }),
+      };
+    }
 
+    if (leadLocation.length > 160) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Lead location must be at most 160 characters' }),
+      };
+    }
 
-// ----- Sold listings -----
-let soldUrlText = null;
-if (useSoldListings) {
-  if (!soldListingsUrl || !soldListingsUrl.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Sold listings URL cannot be empty when included' }),
-    };
+    leadLocationText = leadLocation.trim();
   }
 
-  const u = soldListingsUrl.trim();
+  // ----- Platforms -----
+  let platformsText = null;
+  if (usePlatforms) {
+    const platforms = [];
+    if (platform_ebay) platforms.push('eBay');
+    if (platform_facebook) platforms.push('Facebook Marketplace');
+    if (platform_stockx) platforms.push('StockX');
+    if (platform_goat) platforms.push('GOAT');
 
-  if (!/^https?:\/\//i.test(u)) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Sold listings URL must start with http or https' }),
-    };
+    if (platforms.length === 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          error: 'Select at least one resell platform or untick the section',
+        }),
+      };
+    }
+
+    platformsText = platforms.join(', ');
   }
 
-  if (u.length > 300) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Sold listings URL is too long' }),
-    };
+  // ----- Sold listings (per platform, but only if filled) -----
+  let soldText = null;
+  if (useSoldListings) {
+    const platformSoldConfigs = [
+      { label: 'eBay',     url: soldUrl_ebay },
+      { label: 'Facebook', url: soldUrl_facebook },
+      { label: 'StockX',   url: soldUrl_stockx },
+      { label: 'GOAT',     url: soldUrl_goat },
+    ];
+
+    const lines = [];
+
+    for (const { label, url } of platformSoldConfigs) {
+      if (!url || !url.trim()) {
+        continue; // field empty → ignore
+      }
+
+      const u = url.trim();
+
+      if (!/^https?:\/\//i.test(u)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: `Sold listings URL for ${label} must start with http or https`,
+          }),
+        };
+      }
+
+      if (u.length > 300) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: `Sold listings URL for ${label} is too long`,
+          }),
+        };
+      }
+
+      lines.push(`**${label}:** [View](${u})`);
+    }
+
+    if (lines.length === 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          error: 'Provide at least one sold listings URL or untick "Sold listings".',
+        }),
+      };
+    }
+
+    soldText = lines.join('\n');
   }
 
-  soldUrlText = u;
-}
+  // ----- Description -----
+  let descriptionText = null;
+  if (useDescription) {
+    if (!description || !description.trim()) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Description cannot be empty when included' }),
+      };
+    }
 
+    if (description.length > 1500) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Description must be at most 1500 characters' }),
+      };
+    }
 
-// ----- Description -----
-let descriptionText = null;
-if (useDescription) {
-  if (!description || !description.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Description cannot be empty when included' }),
-    };
+    descriptionText = description.trim();
   }
 
-  if (description.length > 1500) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Description must be at most 1500 characters' }),
-    };
+  // ----- Risk -----
+  let riskText = null;
+  if (useRiskRating) {
+    if (!riskRating || !riskRating.trim()) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Risk rating cannot be empty when included' }),
+      };
+    }
+
+    const n = Number(riskRating);
+    if (!Number.isInteger(n) || n < 1 || n > 5) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Risk rating must be an integer 1–5' }),
+      };
+    }
+
+    riskText = `${n} / 5`;
   }
 
-  descriptionText = description.trim();
-}
+  // ----- Returns -----
+  let returnsText = null;
+  if (useReturns) {
+    if (!returnsInfo || !returnsInfo.trim()) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Returns info cannot be empty when included' }),
+      };
+    }
 
+    if (returnsInfo.length > 500) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          error: 'Returns info must be at most 500 characters',
+        }),
+      };
+    }
 
-// ----- Risk -----
-let riskText = null;
-if (useRiskRating) {
-  if (!riskRating || !riskRating.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Risk rating cannot be empty when included' }),
-    };
+    returnsText = returnsInfo.trim();
   }
 
-  const n = Number(riskRating);
-  if (!Number.isInteger(n) || n < 1 || n > 5) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Risk rating must be an integer 1–5' }),
-    };
+  // ----- Misc -----
+  let miscText = null;
+  if (useMisc) {
+    if (!miscInfo || !miscInfo.trim()) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Misc info cannot be empty when included' }),
+      };
+    }
+
+    if (miscInfo.length > 500) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Misc info must be at most 500 characters' }),
+      };
+    }
+
+    miscText = miscInfo.trim();
   }
 
-  riskText = `${n} / 5`;
-}
+  // ----- Image -----
+  let imageUrlText = null;
+  if (imageUrl && imageUrl.trim()) {
+    const i = imageUrl.trim();
+    if (!/^https?:\/\//i.test(i)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Image URL must start with http or https' }),
+      };
+    }
 
+    if (i.length > 400) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Image URL is too long' }),
+      };
+    }
 
-// ----- Returns -----
-let returnsText = null;
-if (useReturns) {
-  if (!returnsInfo || !returnsInfo.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Returns info cannot be empty when included' }),
-    };
+    imageUrlText = i;
   }
 
-  if (returnsInfo.length > 500) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Returns info must be at most 500 characters' }),
-    };
-  }
-
-  returnsText = returnsInfo.trim();
-}
-
-
-// ----- Misc -----
-let miscText = null;
-if (useMisc) {
-  if (!miscInfo || !miscInfo.trim()) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Misc info cannot be empty when included' }),
-    };
-  }
-
-  if (miscInfo.length > 500) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Misc info must be at most 500 characters' }),
-    };
-  }
-
-  miscText = miscInfo.trim();
-}
-
-
-// ----- Image -----
-let imageUrlText = null;
-if (imageUrl && imageUrl.trim()) {
-  const i = imageUrl.trim();
-  if (!/^https?:\/\//i.test(i)) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Image URL must start with http or https' }),
-    };
-  }
-
-  if (i.length > 400) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Image URL is too long' }),
-    };
-  }
-
-  imageUrlText = i;
-}
-
+  // ---------------------------
   // Build embed fields
-  // Build embed fields
+  // ---------------------------
+
   const fields = [];
 
   // Row 1: RRP / Resell / Est. Profit (inline)
@@ -447,10 +474,10 @@ if (imageUrl && imageUrl.trim()) {
   }
 
   // Row 5: Sold listings (full width)
-  if (useSoldListings && soldUrlText) {
+  if (useSoldListings && soldText) {
     fields.push({
       name: 'Sold listings',
-      value: `[View sold listings](${soldUrlText})`,
+      value: soldText,
       inline: false,
     });
   }

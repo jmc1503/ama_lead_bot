@@ -26,6 +26,12 @@ const LEAD_TYPE_CONFIG = {
     webhookUrl: process.env.WEBHOOK_LUNCHMONEY,
     roleId: process.env.ROLE_LUNCHMONEY,
   },
+  tickets: {
+    label: 'Tickets',
+    colour: 0xef4444,
+    webhookUrl: process.env.WEBHOOK_TICKETS,
+    roleId: process.env.ROLE_TICKETS,
+  },
 };
 
 function parseMoney(str) {

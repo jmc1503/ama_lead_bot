@@ -254,6 +254,7 @@
           <option value="pokemon">Pokemon</option>
           <option value="lunchmoney">Lunch Money</option>
           <option value="tickets">Tickets</option>
+          <option value="test">Test</option>
         </select>
         <span class="field-hint">Controls channel and role ping.</span>
       </label>
@@ -593,17 +594,30 @@
       </div>
     </div>
 
-    <!-- Staff password -->
-    <label>
-      Staff password
-      <input
-        type="password"
-        name="authKey"
-        required
-        placeholder="Shared console password"
-      />
-      <span class="field-hint">Prevents randoms from posting if they find the link.</span>
-    </label>
+    <!-- Lead provider + Staff password -->
+    <div class="field-row">
+      <label>
+        Lead provider
+        <select name="leadProvider" required>
+          <option value="">Select…</option>
+          <option value="Ed">Ed</option>
+          <option value="Louis">Louis</option>
+          <option value="Sunil">Sunil</option>
+        </select>
+        <span class="field-hint">For internal tracking only – not shown on the lead.</span>
+      </label>
+
+      <label>
+        Staff password
+        <input
+          type="password"
+          name="authKey"
+          required
+          placeholder="Shared console password"
+        />
+        <span class="field-hint">Prevents randoms from posting if they find the link.</span>
+      </label>
+    </div>
 
     <button type="submit">
       <span>Post lead</span>

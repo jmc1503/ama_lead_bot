@@ -18,7 +18,7 @@ const LEAD_TYPE_CONFIG = {
     label: 'Pokemon',
     colour: 0x22c55e,
     webhookUrl: process.env.WEBHOOK_POKEMON,
-    roleId: process.env.ROLE_ELECTRONICS,
+    roleId: process.env.ROLE_POKEMON,
   },
   lunchmoney: {
     label: 'Lunch Money',

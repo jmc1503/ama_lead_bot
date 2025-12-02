@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AMA Weekly Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem 3rem;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    header img {
+      height: 40px;
+      width: auto;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    p.subtitle {
+      margin: 0.25rem 0 0;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      font: inherit;
+      padding: 0.45rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: rgba(15, 23, 42, 0.02);
+      box-sizing: border-box;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #1d9bf0;
+      box-shadow: 0 0 0 1px rgba(29, 155, 240, 0.5);
+      background: rgba(15, 23, 42, 0.01);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      white-space: pre-wrap;
+    }
+
+    /* Header description full width */
+    #headerDescription {
+      width: 100%;
+    }
+
+    .field-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .field-row > label {
+      flex: 1 1 200px;
+    }
+
+    .section-heading {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .field-hint {
+      font-size: 0.8rem;
+      font-weight: 400;
+      opacity: 0.7;
+    }
+
+    .day-card {
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      border-radius: 10px;
+      padding: 0.75rem 0.85rem;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .toggle-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .toggle-inline input[type="checkbox"] {
+      width: auto;
+      accent-color: #1d9bf0;
+    }
+
+    .drops-container {
+      display: grid;
+      gap: 0.6rem;
+      margin-top: 0.35rem;
+    }
+
+    .drop-card {
+      border-radius: 8px;
+      border: 1px dashed rgba(148, 163, 184, 0.7);
+      padding: 0.55rem 0.6rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .drop-heading-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .drop-title-input {
+      flex: 1 1 auto;
+    }
+
+    .drop-remove-btn {
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      border: 1px solid rgba(248, 113, 113, 0.9);
+      background: rgba(248, 113, 113, 0.1);
+      cursor: pointer;
+    }
+
+    .platform-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+
+    .platform-row label {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.3rem;
+      font-weight: 500;
+    }
+
+    .platform-row input[type="checkbox"] {
+      width: auto;
+      accent-color: #1d9bf0;
+    }
+
+    .sold-urls {
+      margin-top: 0.4rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .sold-url-row {
+      padding-left: 0.2rem;
+    }
+
+    .format-toolbar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .format-toolbar button {
+      background: #e5e7eb;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .format-toolbar button:hover {
+      background: #d1d5db;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: #1d9bf0;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(148, 163, 184, 0.2);
+      color: inherit;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+    }
+
+        #output {
+      margin-top: 1.5rem;
+    }
+
+    /* Fake Discord embed wrapper */
+    #calendarPreview {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.75rem 0.9rem;
+      border-radius: 4px;
+      background: #2b2d31;           /* Discord dark embed background */
+      border-left: 4px solid #5865f2;/* Discord blurple bar */
+      border-top: 1px solid #1f2933;
+      border-right: 1px solid #1f2933;
+      border-bottom: 1px solid #1f2933;
+      color: #f3f4f6;
+      font-family: "gg sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.95rem;
+    }
+
+    /* The actual text inside the “embed” */
+    #calendarPreviewText {
+      margin: 0;
+      white-space: pre-wrap;          /* respect line breaks */
+    }
+
+    @media (max-width: 640px) {
+      body {
+        margin-top: 1.25rem;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="images/logo.png" alt="AMA logo" />
+    <div>
+      <h1>AMA Weekly Calendar Builder</h1>
+      <p class="subtitle">Generate a pre-formatted Discord weekly sneaker & streetwear calendar.</p>
+    </div>
+  </header>
+
+  <section class="grid" id="builder">
+    <div class="field-row">
+      <label>
+        Week starting (Monday)
+        <input type="date" id="weekStart" />
+        <span class="field-hint">Pick the Monday of the week. We’ll auto-fill Monday–Sunday and the title range.</span>
+      </label>
+    </div>
+
+    <div>
+      <div class="section-heading">Header description</div>
+      <div class="format-toolbar">
+        <button type="button" data-target="headerDescription" data-format="bold"><b>B</b></button>
+        <button type="button" data-target="headerDescription" data-format="italic"><i>I</i></button>
+        <button type="button" data-target="headerDescription" data-format="underline"><u>U</u></button>
+        <button type="button" data-target="headerDescription" data-format="strike"><s>S</s></button>
+      </div>
+      <textarea
+        id="headerDescription"
+        placeholder="Slow week, a couple of rumoured drops that could save it but not much going on unfortunately."
+      ></textarea>
+    </div>
+
+    <div>
+      <div class="section-heading">Days</div>
+      <div id="daysContainer" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="output">
+    <div class="section-heading">Discord preview</div>
+    <p class="field-hint">
+      Live preview of how your post will look. Copy all and paste into Discohook / your webhook sender.
+    </p>
+    <div id="calendarPreview">
+      <pre id="calendarPreviewText"></pre>
+    </div>
+  </section>
+
+  <script>
+    // --- Formatting helpers (reusable for header & others if needed) ---
+    function applyFormatting(targetId, type) {
+      const box = document.getElementById(targetId);
+      if (!box) return;
+
+      const start = box.selectionStart;
+      const end = box.selectionEnd;
+      const selected = box.value.substring(start, end);
+
+      let wrapStart = "";
+      let wrapEnd = "";
+
+      if (type === "bold") { wrapStart = "**"; wrapEnd = "**"; }
+      if (type === "italic") { wrapStart = "*"; wrapEnd = "*"; }
+      if (type === "underline") { wrapStart = "__"; wrapEnd = "__"; }
+      if (type === "strike") { wrapStart = "~~"; wrapEnd = "~~"; }
+
+      const before = box.value.substring(0, start);
+      const after = box.value.substring(end);
+
+      box.value = before + wrapStart + selected + wrapEnd + after;
+      box.focus();
+      box.selectionStart = start + wrapStart.length;
+      box.selectionEnd = end + wrapStart.length;
+
+      updatePreview();
+    }
+
+    document.querySelectorAll(".format-toolbar button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        const format = btn.dataset.format;
+        applyFormatting(targetId, format);
+      });
+    });
+
+    // --- Week + days setup ---
+    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+    function formatDayLabel(date) {
+      const d = date.getDate().toString().padStart(2, "0");
+      const m = (date.getMonth() + 1).toString().padStart(2, "0");
+      return `${d}/${m}`;
+    }
+
+    function formatRangeTitle(startDate) {
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+
+      const options = { month: "long" };
+      const startDay = startDate.getDate();
+      const endDay = endDate.getDate();
+      const startMonthName = startDate.toLocaleDateString("en-GB", options);
+      const endMonthName = endDate.toLocaleDateString("en-GB", options);
+
+      if (startMonthName === endMonthName) {
+        return `${startDay}–${endDay} ${startMonthName}`;
+      } else {
+        return `${startDay} ${startMonthName} – ${endDay} ${endMonthName}`;
+      }
+    }
+
+    const weekStartInput = document.getElementById("weekStart");
+    const daysContainer = document.getElementById("daysContainer");
+    const calendarPreviewText = document.getElementById("calendarPreviewText");
+    const headerDescriptionEl = document.getElementById("headerDescription");
+
+    headerDescriptionEl.addEventListener("input", updatePreview);
+
+    function buildDayCards(startDate) {
+      daysContainer.innerHTML = "";
+      if (!startDate) {
+        updatePreview();
+        return;
+      }
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const dayName = dayNames[i];
+        const labelDate = formatDayLabel(date);
+
+        const dayCard = document.createElement("div");
+        dayCard.className = "day-card";
+        dayCard.dataset.dayIndex = i;
+
+        dayCard.innerHTML = `
+          <div class="day-header">
+            <div>${dayName} <span data-date-label>(${labelDate})</span></div>
+            <label class="toggle-inline">
+              <input type="checkbox" class="no-drops-checkbox" />
+              No profitable releases
+            </label>
+          </div>
+          <div class="drops-container"></div>
+          <button type="button" class="btn btn-secondary add-drop-btn">Add drop</button>
+        `;
+
+        const dropsContainer = dayCard.querySelector(".drops-container");
+        const addDropBtn = dayCard.querySelector(".add-drop-btn");
+        const noDropsCheckbox = dayCard.querySelector(".no-drops-checkbox");
+
+        addDropBtn.addEventListener("click", () => {
+          addDropCard(dropsContainer);
+          updatePreview();
+        });
+
+        noDropsCheckbox.addEventListener("change", () => {
+          const disabled = noDropsCheckbox.checked;
+          dropsContainer.style.display = disabled ? "none" : "grid";
+          addDropBtn.disabled = disabled;
+          updatePreview();
+        });
+
+        // Start each day with one blank drop
+        addDropCard(dropsContainer);
+
+        daysContainer.appendChild(dayCard);
+      }
+
+      updatePreview();
+    }
+
+    function addDropCard(container) {
+      const card = document.createElement("div");
+      card.className = "drop-card";
+
+      card.innerHTML = `
+        <div class="drop-heading-row">
+          <label class="drop-title-input">
+            Title of sneaker
+            <input type="text" class="drop-title" placeholder="e.g. Nike KD 4 Gold Medal - ❓ (Rumoured)" />
+          </label>
+          <button type="button" class="drop-remove-btn">Remove</button>
+        </div>
+
+        <div class="field-row">
+          <label>
+            💷 RRP
+            <input type="text" class="drop-rrp" placeholder="e.g. £120" />
+          </label>
+          <label>
+            ⏰ Time
+            <input type="text" class="drop-time" placeholder="e.g. 08:00 or TBC" />
+          </label>
+          <label>
+            🛍️ Site
+            <input type="text" class="drop-site" placeholder="e.g. SNKRS, Confirmed, Supreme" />
+          </label>
+        </div>
+
+        <div>
+          <span class="field-hint">✅ Sold listings / platforms (tick all that apply)</span>
+          <div class="platform-row">
+            <label><input type="checkbox" class="drop-platform" data-platform="ebay" /> eBay</label>
+            <label><input type="checkbox" class="drop-platform" data-platform="facebook" /> Facebook</label>
+            <label><input type="checkbox" class="drop-platform" data-platform="stockx" /> StockX</label>
+            <label><input type="checkbox" class="drop-platform" data-platform="goat" /> GOAT</label>
+            <label><input type="checkbox" class="drop-platform" data-platform="vinted" /> Vinted</label>
+          </div>
+          <div class="sold-urls">
+            <div class="sold-url-row" data-platform="ebay" data-label="eBay" style="display:none;">
+              <label>
+                eBay sold URL
+                <input type="text" class="drop-sold-url" placeholder="https://..." />
+              </label>
+            </div>
+            <div class="sold-url-row" data-platform="facebook" data-label="Facebook" style="display:none;">
+              <label>
+                Facebook sold URL
+                <input type="text" class="drop-sold-url" placeholder="https://..." />
+              </label>
+            </div>
+            <div class="sold-url-row" data-platform="stockx" data-label="StockX" style="display:none;">
+              <label>
+                StockX sold URL
+                <input type="text" class="drop-sold-url" placeholder="https://..." />
+              </label>
+            </div>
+            <div class="sold-url-row" data-platform="goat" data-label="GOAT" style="display:none;">
+              <label>
+                GOAT sold URL
+                <input type="text" class="drop-sold-url" placeholder="https://..." />
+              </label>
+            </div>
+            <div class="sold-url-row" data-platform="vinted" data-label="Vinted" style="display:none;">
+              <label>
+                Vinted sold URL
+                <input type="text" class="drop-sold-url" placeholder="https://..." />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <label>
+          🧑‍⚖️ Verdict
+          <textarea class="drop-verdict" placeholder="Sales of £200+ currently, we'll continue to monitor..."></textarea>
+        </label>
+      `;
+
+      const removeBtn = card.querySelector(".drop-remove-btn");
+      removeBtn.addEventListener("click", () => {
+        container.removeChild(card);
+        updatePreview();
+      });
+
+      // Inputs that should trigger preview updates
+      const liveInputs = card.querySelectorAll("input, textarea");
+      liveInputs.forEach(el => {
+        el.addEventListener("input", updatePreview);
+      });
+
+      // Per-drop platform → sold URL visibility
+      const platformCheckboxes = card.querySelectorAll(".drop-platform");
+      const soldRows = card.querySelectorAll(".sold-url-row");
+
+      function updateSoldVisibility() {
+        platformCheckboxes.forEach(cb => {
+          const platformKey = cb.dataset.platform;
+          const row = card.querySelector(`.sold-url-row[data-platform="${platformKey}"]`);
+          if (!row) return;
+          row.style.display = cb.checked ? "block" : "none";
+        });
+        updatePreview();
+      }
+
+      platformCheckboxes.forEach(cb => {
+        cb.addEventListener("change", updateSoldVisibility);
+      });
+
+      updateSoldVisibility();
+
+      container.appendChild(card);
+    }
+
+    weekStartInput.addEventListener("change", () => {
+        if (!weekStartInput.value) {
+        daysContainer.innerHTML = "";
+        calendarPreviewText.textContent = "";
+        return;
+      }
+      const startDate = new Date(weekStartInput.value);
+      buildDayCards(startDate);
+    });
+
+    // --- Live preview generator ---
+    function updatePreview() {
+      if (!weekStartInput.value) {
+        calendarPreview.textContent = "";
+        return;
+      }
+    
+
+      const startDate = new Date(weekStartInput.value);
+      const rangeTitle = formatRangeTitle(startDate);
+      const headerDesc = (headerDescriptionEl.value || "").trim();
+
+      const lines = [];
+
+      // Title
+      lines.push(`Weekly Sneaker & Streetwear Calendar - ${rangeTitle}`);
+
+      // Blank line between title and description if description exists
+      if (headerDesc) {
+        lines.push("");
+        lines.push(headerDesc);
+      }
+
+      // Blank line after description
+      lines.push("");
+      lines.push("------------------------------------------");
+      lines.push("");
+
+      const dayCards = Array.from(daysContainer.querySelectorAll(".day-card"));
+
+      dayCards.forEach((dayCard, index) => {
+        const dayName = dayNames[index];
+        const dateLabel = dayCard.querySelector("[data-date-label]").textContent || "";
+        const noDrops = dayCard.querySelector(".no-drops-checkbox").checked;
+        const dropsContainer = dayCard.querySelector(".drops-container");
+        const dropCards = Array.from(dropsContainer.querySelectorAll(".drop-card"));
+
+        lines.push(`${dayName} ${dateLabel}`);
+        lines.push("");
+
+        if (noDrops || dropCards.length === 0) {
+          lines.push(":x:");
+          lines.push("No profitable releases");
+          lines.push("");
+          lines.push("------------------------------------------");
+          lines.push("");
+          return;
+        }
+
+        dropCards.forEach(card => {
+          const title = (card.querySelector(".drop-title").value || "").trim();
+          const rrp = (card.querySelector(".drop-rrp").value || "").trim();
+          const time = (card.querySelector(".drop-time").value || "").trim();
+          const site = (card.querySelector(".drop-site").value || "").trim();
+          const verdict = (card.querySelector(".drop-verdict").value || "").trim();
+
+          const platforms = Array.from(card.querySelectorAll(".drop-platform:checked"))
+            .map(cb => cb.dataset.platform);
+
+          const soldRows = Array.from(card.querySelectorAll(".sold-url-row"));
+          const soldLines = [];
+
+          soldRows.forEach(row => {
+            const urlInput = row.querySelector(".drop-sold-url");
+            const url = (urlInput && urlInput.value || "").trim();
+            if (!url) return;
+            const label = row.dataset.label || "";
+            soldLines.push(`🔗 ${label}: ${url}`);
+          });
+
+          if (title) {
+            lines.push(title);
+            lines.push("");
+          }
+
+          if (rrp) {
+            lines.push(`💷 : ${rrp}`);
+          }
+          if (time) {
+            lines.push(`⏰ : ${time}`);
+          }
+          if (site) {
+            lines.push(`🛍️ : ${site}`);
+          }
+
+          if (platforms.length > 0) {
+            const platformLabels = platforms.map(p => {
+              if (p === "ebay") return "eBay";
+              if (p === "facebook") return "Facebook";
+              if (p === "stockx") return "StockX";
+              if (p === "goat") return "GOAT";
+              if (p === "vinted") return "Vinted";
+              return p;
+            });
+            lines.push(`✅ : ${platformLabels.join(", ")}`);
+          }
+
+          if (soldLines.length > 0) {
+            soldLines.forEach(l => lines.push(l));
+          }
+
+          if (verdict) {
+            lines.push(`🧑‍⚖️ : ${verdict}`);
+          }
+
+          lines.push(""); // blank line between drops on the same day
+        });
+
+        lines.push("------------------------------------------");
+        lines.push("");
+      });
+
+      // Footer text
+      lines.push("If the drop is looking profitable it'll receive it's own channel & guide. If it's looking underwhelming then we'll post in Weekly Calendar Updates with a short message on our opinions.");
+      lines.push("");
+      lines.push("If we've missed anything - please drop us a message :)");
+      lines.push("");
+      lines.push("@Member");
+
+      calendarPreview.textContent = lines.join("\n");
+    }
+  </script>
+</body>
+</html>

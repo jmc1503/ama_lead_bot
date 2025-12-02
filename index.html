@@ -211,6 +211,26 @@
       h1 {
         font-size: 1.4rem;
       }
+
+
+      .format-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.format-toolbar button {
+  background: #e5e7eb;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.format-toolbar button:hover {
+  background: #d1d5db;
+}
     }
   </style>
 </head>
@@ -232,7 +252,7 @@
           <option value="sneakers">Sneakers</option>
           <option value="flips">Flips</option>
           <option value="pokemon">Pokemon</option>
-          <option value="lunch_money">Lunch Money</option>
+          <option value="lunchmoney">Lunch Money</option>
           <option value="tickets">Tickets</option>
         </select>
         <span class="field-hint">Controls channel and role ping.</span>
@@ -468,13 +488,24 @@
           Include
         </label>
       </div>
+    
       <div class="optional-body">
-          <textarea
-            name="description"
-            maxlength="1500"
-            placeholder="Sizes, notes, stock insights, fees, timing etc."
-          ></textarea>
-        </label>
+    
+        <!-- Formatting toolbar -->
+        <div class="format-toolbar">
+          <button type="button" data-format="bold"><b>B</b></button>
+          <button type="button" data-format="italic"><i>I</i></button>
+          <button type="button" data-format="underline"><u>U</u></button>
+          <button type="button" data-format="strike"><s>S</s></button>
+        </div>
+    
+        <textarea
+          name="description"
+          maxlength="1500"
+          placeholder="Sizes, notes, timings, stock insights etc."
+          id="descriptionBox"
+        ></textarea>
+    
       </div>
     </div>
 
@@ -672,6 +703,48 @@
       platformCheckboxes[key].addEventListener('change', updateSoldFieldVisibility);
     }
     updateSoldFieldVisibility();
+
+     // --- Formatting for Description ---
+  const descBox = document.getElementById("descriptionBox");
+
+document.querySelectorAll(".format-toolbar button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const format = btn.dataset.format;
+    applyFormat(format);
+  });
+});
+
+function applyFormat(type) {
+  const start = descBox.selectionStart;
+  const end = descBox.selectionEnd;
+  const selected = descBox.value.substring(start, end);
+
+  let wrapStart = "";
+  let wrapEnd = "";
+
+  if (type === "bold") {
+    wrapStart = "**"; wrapEnd = "**";
+  }
+  if (type === "italic") {
+    wrapStart = "*"; wrapEnd = "*";
+  }
+  if (type === "underline") {
+    wrapStart = "__"; wrapEnd = "__";
+  }
+  if (type === "strike") {
+    wrapStart = "~~"; wrapEnd = "~~";
+  }
+
+  const before = descBox.value.substring(0, start);
+  const after = descBox.value.substring(end);
+
+  descBox.value = before + wrapStart + selected + wrapEnd + after;
+
+  descBox.focus();
+  descBox.selectionStart = start + wrapStart.length;
+  descBox.selectionEnd = end + wrapStart.length;
+}
+
   </script>
 </body>
 </html>

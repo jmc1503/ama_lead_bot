@@ -32,6 +32,12 @@ const LEAD_TYPE_CONFIG = {
     webhookUrl: process.env.WEBHOOK_TICKETS,
     roleId: process.env.ROLE_TICKETS,
   },
+  test: {
+    label: 'Test',
+    colour: 0xef4444,
+    webhookUrl: process.env.WEBHOOK_TEST,
+    roleId: process.env.ROLE_TICKETS,
+  },
 };
 
 function parseMoney(str) {
@@ -63,6 +69,7 @@ exports.handler = async (event, context) => {
   const {
     leadType,
     title,
+    leadProvider,
     authKey,
 
     // pricing
@@ -147,6 +154,16 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ error: 'Title must be 3–150 characters' }),
     };
   }
+
+    // Lead provider (required, internal only)
+    const leadProviderValue = (leadProvider || '').trim();
+    const allowedProviders = ['Ed', 'Louis', 'Sunil'];
+    if (!allowedProviders.includes(leadProviderValue)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Lead provider is required' }),
+      };
+    }
 
   // Flags (checkboxes: present = "on")
   const usePricing = !!includePricing;
@@ -544,6 +561,47 @@ exports.handler = async (event, context) => {
         statusCode: 500,
         body: JSON.stringify({ error: 'Discord webhook failed' }),
       };
+    }
+
+    // ---------------------------
+    // Log to Google Sheets (best-effort)
+    // ---------------------------
+    const sheetsUrl = process.env.SHEETS_WEBHOOK_URL;
+    const sheetsSecret = process.env.SHEETS_SECRET;
+
+    if (sheetsUrl && sheetsSecret) {
+      try {
+        // Use plain strings; Google Sheet does not care about formatting
+        const dropForSheet =
+          (useDropDate && dropLabel) ? dropLabel : '';
+
+        const actualStr =
+          (usePricing && rrpValue != null) ? rrpValue.toString() : '';
+
+        const potentialStr =
+          (usePricing && resellValue != null) ? resellValue.toString() : '';
+
+        const payload = {
+          secret: sheetsSecret,
+          product: titleText,
+          url: (useLeadLocation && leadLocationText) ? leadLocationText : '',
+          dropDate: dropForSheet,
+          actual: actualStr,
+          potential: potentialStr,
+          leadProvider: leadProviderValue,
+        };
+
+        await fetch(sheetsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (sheetErr) {
+        console.error('Sheets logging error:', sheetErr);
+        // Do not fail the request for Sheets errors
+      }
+    } else {
+      console.warn('Sheets logging skipped: SHEETS_WEBHOOK_URL or SHEETS_SECRET not set');
     }
 
     return {
